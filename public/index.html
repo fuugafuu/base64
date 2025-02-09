@@ -3,78 +3,48 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QRコードでファイル共有</title>
+  <title>QRコード読み取り</title>
   <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
 </head>
 <body>
-  <h1>QRコードでファイル共有</h1>
+  <h1>QRコードを読み取る</h1>
 
-  <!-- アップロードフォーム -->
-  <form id="uploadForm" enctype="multipart/form-data">
-    <input type="file" id="fileInput" accept="*/*" required />
-    <button type="submit">アップロード</button>
-  </form>
+  <!-- カメラを起動するボタン -->
+  <button id="startButton">カメラを起動</button>
 
-  <!-- 結果表示 -->
-  <div id="result" style="display: none;">
-    <h2>アップロード成功！</h2>
-    <p>ダウンロードリンク: <a id="fileLink" href="#" target="_blank" download>ここをクリック</a></p>
-    <h3>QRコード</h3>
-    <img id="qrCode" alt="QRコード" />
-  </div>
+  <!-- QRコードを読み取るためのカメラ映像 -->
+  <div id="reader" style="width: 500px; height: 500px;"></div>
 
-  <!-- QRコードスキャン用カメラエリア -->
-  <div id="reader" style="width: 300px; height: 300px;"></div>
+  <h3>スキャンしたURL:</h3>
+  <p id="scannedUrl"></p>
 
   <script>
-    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const fileInput = document.getElementById('fileInput');
-      const formData = new FormData();
-      formData.append('file', fileInput.files[0]);
+    // ボタンを押したらカメラを起動
+    document.getElementById('startButton').addEventListener('click', function() {
+      const readerElement = document.getElementById('reader');
+      
+      // HTML5 QRコードリーダーを開始
+      const html5QrCode = new Html5Qrcode("reader");
 
-      // サーバーにファイルをアップロード
-      const response = await fetch('/upload', {
-        method: 'POST',
-        body: formData
+      // QRコードスキャン開始
+      html5QrCode.start(
+        { facingMode: "environment" }, // カメラの向き（背面カメラ）
+        {
+          fps: 10, // スキャンのフレームレート（適切に設定）
+          qrbox: 250 // QRコードの読み取り領域のサイズ
+        },
+        (decodedText, decodedResult) => {
+          // QRコードが読み取れた場合
+          document.getElementById('scannedUrl').innerText = decodedText;
+          html5QrCode.stop(); // スキャンを停止
+        },
+        (errorMessage) => {
+          // エラーメッセージ（読み取り失敗など）
+          console.log(errorMessage);
+        }
+      ).catch(err => {
+        console.log("カメラの起動に失敗しました: ", err);
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        document.getElementById('fileLink').href = data.fileUrl;
-        document.getElementById('fileLink').download = fileInput.files[0].name;
-        document.getElementById('qrCode').src = data.qrCodeDataUrl;
-        document.getElementById('result').style.display = 'block';
-      } else {
-        alert('アップロードに失敗しました');
-      }
-    });
-
-    // QRコードスキャン機能
-    function onScanSuccess(decodedText, decodedResult) {
-      // QRコード読み取り成功時の処理
-      console.log('QRコードの内容:', decodedText);
-
-      // ダウンロードリンクにリダイレクト
-      const fileLink = document.getElementById('fileLink');
-      fileLink.href = decodedText; // QRコードのURLを設定
-      fileLink.click();  // リンクをクリックしてダウンロード開始
-    }
-
-    function onScanFailure(error) {
-      // スキャン失敗時の処理
-      console.warn('QRコード読み取り失敗', error);
-    }
-
-    // QRコードリーダーの設定
-    const html5QrCode = new Html5Qrcode("reader");
-    html5QrCode.start(
-      { facingMode: "environment" }, // 背面カメラを使用
-      { fps: 10, qrbox: 250 }, // フレームレートとQRコードの表示エリア設定
-      onScanSuccess,
-      onScanFailure
-    ).catch((err) => {
-      console.error("QRコードのスキャンを開始できませんでした:", err);
     });
   </script>
 </body>
