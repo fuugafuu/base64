@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QRコードでファイル共有</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
+</head>
+<body>
+  <h1>QRコードでファイル共有</h1>
+  <form id="uploadForm" enctype="multipart/form-data">
+    <input type="file" id="fileInput" accept="*/*" required />
+    <button type="submit">アップロード</button>
+  </form>
+
+  <div id="result" style="display: none;">
+    <h2>アップロード成功！</h2>
+    <p>ダウンロードリンク: <a id="fileLink" href="#" target="_blank" download>ここをクリック</a></p>
+    <h3>QRコード</h3>
+    <img id="qrCode" alt="QRコード" />
+  </div>
+
+  <script>
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fileInput = document.getElementById('fileInput');
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+
+      // サーバーにファイルをアップロード
+      const response = await fetch('/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        document.getElementById('fileLink').href = data.fileUrl;
+        document.getElementById('fileLink').download = fileInput.files[0].name;
+        document.getElementById('qrCode').src = data.qrCodeDataUrl;
+        document.getElementById('result').style.display = 'block';
+      } else {
+        alert('アップロードに失敗しました');
+      }
+    });
+  </script>
+</body>
+</html>
