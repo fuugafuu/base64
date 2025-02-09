@@ -20,14 +20,28 @@
   </div>
 
   <script>
-    document.getElementById('downloadForm').addEventListener('submit', async function(e) {
+    // 番号と対応するファイルのマッピング
+    const fileMapping = {
+      "1": "file_1.txt",
+      "2": "file_2.txt",
+      "3": "file_3.txt",
+      // 必要に応じて他の番号とファイルを追加
+    };
+
+    document.getElementById('downloadForm').addEventListener('submit', function(e) {
       e.preventDefault();
-      const fileNumber = document.getElementById('fileNumber').value;
-      const response = await fetch(`/api/download/${fileNumber}`);
       
-      if (response.ok) {
-        const data = await response.json();
-        document.getElementById('downloadLink').href = data.fileUrl;
+      const fileNumber = document.getElementById('fileNumber').value;
+      
+      // 番号に対応するファイル名を取得
+      const fileName = fileMapping[fileNumber];
+
+      if (fileName) {
+        // 対応するファイルURLを作成
+        const fileUrl = `/uploads/${fileName}`;
+
+        // ダウンロードリンクを設定
+        document.getElementById('downloadLink').href = fileUrl;
         document.getElementById('result').style.display = 'block';
       } else {
         alert('番号に対応するファイルが見つかりません。');
